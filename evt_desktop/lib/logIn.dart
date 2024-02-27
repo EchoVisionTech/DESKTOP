@@ -53,6 +53,13 @@ Center _centerPage(BuildContext context) {
   final TextEditingController controllerUser = TextEditingController();
   final TextEditingController controllerPassword = TextEditingController();
 
+
+  if (appData.doesFileExist(appData.filePath)) {
+    String oldUrl = appData.readSingleLineFile(appData.filePath);
+
+    controllerURL.text = oldUrl;
+  }
+
   return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -63,8 +70,8 @@ Center _centerPage(BuildContext context) {
           Text('Url'),
           SizedBox(height: 5),
           SizedBox(
-            height: 40,
-            width: 250,
+            height: appData.textFieldHeight,
+            width: appData.textFieldWidth,
             child: CupertinoTextField(
               controller: controllerURL,
               decoration: BoxDecoration(
@@ -78,8 +85,8 @@ Center _centerPage(BuildContext context) {
           Text("User"),
           SizedBox(height: 5),
           SizedBox(
-            height: 40,
-            width: 250,
+            height: appData.textFieldHeight,
+            width: appData.textFieldWidth,
             child: CupertinoTextField(
               controller: controllerUser,
               decoration: BoxDecoration(
@@ -93,8 +100,8 @@ Center _centerPage(BuildContext context) {
           Text("Password"),
           SizedBox(height: 5),
           SizedBox(
-            height: 40,
-            width: 250,
+            height: appData.textFieldHeight,
+            width: appData.textFieldWidth,
             child: CupertinoTextField(
               controller: controllerPassword,
               decoration: BoxDecoration(
@@ -102,6 +109,7 @@ Center _centerPage(BuildContext context) {
                 borderRadius: BorderRadius.circular(5),
               ),
               placeholder: "Password",
+              obscureText: true,
             ),
           ),
           SizedBox(height: 25),
@@ -111,7 +119,7 @@ Center _centerPage(BuildContext context) {
               style: TextStyle(color: Colors.white),
             ),
             color: Colors.blue,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
             onPressed: () { 
               appData.connectToServer(controllerURL.text, controllerUser.text, controllerPassword.text);
             }
