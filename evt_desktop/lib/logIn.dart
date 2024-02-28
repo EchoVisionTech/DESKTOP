@@ -1,3 +1,4 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -121,7 +122,7 @@ Center _centerPage(BuildContext context) {
             color: Colors.blue,
             borderRadius: BorderRadius.circular(10),
             onPressed: () { 
-              appData.connectToServer(controllerURL.text, controllerUser.text, controllerPassword.text);
+              appData.connectToServer(controllerURL.text, controllerUser.text, controllerPassword.text, context);
             }
           ),
         ],

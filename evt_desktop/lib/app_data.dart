@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:evt_desktop/mainPage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,7 +13,7 @@ class AppData with ChangeNotifier {
   double textFieldHeight = 40;
 
 
-  void connectToServer(String url, String user, String password) {
+  void connectToServer(String url, String user, String password, BuildContext context) {
 
     Map<String, String> jsonData = {
       'user': user,
@@ -22,12 +23,12 @@ class AppData with ChangeNotifier {
     String jsonString = jsonEncode(jsonData);
 
     // _loadHttpPostByChunks(url, user, password);
-    _loadHttpPostByChunks(url, jsonString);
+    _loadHttpPostByChunks(url, jsonString, context);
 
     File(filePath).writeAsStringSync(url);
   }
 
-  Future<void> _loadHttpPostByChunks(String url, String data) async {
+  Future<void> _loadHttpPostByChunks(String url, String data, BuildContext context) async {
     var completer = Completer<void>();
 
     Map<String, dynamic> jsonResponse;
@@ -48,8 +49,8 @@ class AppData with ChangeNotifier {
   
         if (jsonResponse["status"] == "OK") {
           String apiKey = jsonResponse["data"]["api_key"];
-          print('API Key: $apiKey');
-        
+          print('User ok');
+          changeToMainPage(context);
         }
 
         completer.complete();
@@ -71,6 +72,13 @@ class AppData with ChangeNotifier {
 
   String readSingleLineFile(String filePath) {
     return File(filePath).readAsStringSync();
+  }
+
+  void changeToMainPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MainPage()),
+    );
   }
 
 }
