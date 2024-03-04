@@ -55,10 +55,10 @@ Center _centerPage(BuildContext context) {
   final TextEditingController controllerPassword = TextEditingController();
 
 
-  if (appData.doesFileExist(appData.filePath)) {
-    String oldUrl = appData.readSingleLineFile(appData.filePath);
+  if (appData.doesFileExist(appData.lastUrlPath)) {
+    String lastUrl = appData.readSingleLineFile(appData.lastUrlPath);
 
-    controllerURL.text = oldUrl;
+    controllerURL.text = lastUrl;
   }
 
   return Center(
@@ -66,8 +66,15 @@ Center _centerPage(BuildContext context) {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('LOGIN'),
-          SizedBox(height: 15),
+          const Text(
+            'LOGIN', 
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: CupertinoColors.black
+            ),
+          ),
+          SizedBox(height: 25),
           Text('Url'),
           SizedBox(height: 5),
           SizedBox(

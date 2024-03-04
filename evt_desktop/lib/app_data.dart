@@ -1,31 +1,61 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:evt_desktop/mainPage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 
 class AppData with ChangeNotifier {
+  String apiKey = "";
 
-  String filePath = "files/lastUrl.txt";
+  String lastUrlPath = "files/lastUrl.txt";
 
   double textFieldWidth = 305;
   double textFieldHeight = 40;
 
+  List<dynamic> userList = [{"nickname":"joel", "pla":"premium"},{"nickname":"geanfranco", "pla":"premium"},{"nickname":"admin", "pla":"free"}];
+  bool changingPlan = false;
 
-  void connectToServer(String url, String user, String password, BuildContext context) {
 
-    Map<String, String> jsonData = {
-      'user': user,
-      'password': password,
-    };
+  Future<void> connectToServer(String url, String user, String password, BuildContext context) async {
 
-    String jsonString = jsonEncode(jsonData);
+    if (!(url.isEmpty || user.isEmpty || password.isEmpty)) {
+      Map<String, String> jsonData = {
+        'user': user,
+        'password': password,
+      };
 
-    // _loadHttpPostByChunks(url, user, password);
-    _loadHttpPostByChunks(url, jsonString, context);
+      String jsonString = jsonEncode(jsonData);
 
-    File(filePath).writeAsStringSync(url);
+      _loadHttpPostByChunks(url, jsonString, context);
+
+      File(lastUrlPath).writeAsStringSync(url);
+
+      userList = await _getList(url);
+
+    } else {
+      showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text(
+          "Warning Error",
+          style: TextStyle(color: CupertinoColors.destructiveRed),
+        ),
+        content: const Text("You should complete all the fields."),
+        actions: [
+          CupertinoDialogAction(
+            child: Text("OK"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+
+    }
   }
 
   Future<void> _loadHttpPostByChunks(String url, String data, BuildContext context) async {
@@ -44,11 +74,11 @@ class AppData with ChangeNotifier {
 
       if (response.statusCode == 200) {
         // La solicitud ha sido exitosa
-        print('RESPONSE: ' + response.body);
+        print('RESPONSE: ${response.body}');
         jsonResponse = jsonDecode(response.body);
   
         if (jsonResponse["status"] == "OK") {
-          String apiKey = jsonResponse["data"]["api_key"];
+          apiKey = jsonResponse["data"]["api_key"];
           print('User ok');
           changeToMainPage(context);
         }
@@ -66,6 +96,46 @@ class AppData with ChangeNotifier {
     return completer.future;
   }
 
+  Future<List<dynamic>> _getList(String url) async {
+    var completer = Completer<List<dynamic>>();
+
+    Map<String, dynamic> jsonResponse;
+    Map<String, dynamic> jsonData;
+
+    List<dynamic> list = [];
+    try {
+      var response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json', 
+          "Authorization": 'Bearer $apiKey',
+        }
+      );
+
+      if (response.statusCode == 200) {
+        // La solicitud ha sido exitosa
+        print('RESPONSE: ${response.body}');
+        jsonResponse = jsonDecode(response.body);
+  
+        if (jsonResponse["status"] == "OK") {
+          list = jsonResponse["data"];
+        }
+
+        completer.complete();
+      } else {
+        // La solicitud ha fallado
+        completer.completeError(
+            "Error del servidor (appData/loadHttpPostByChunks): ${response.reasonPhrase}");
+      }
+    } catch (e) {
+      completer.completeError("Excepción (appData/loadHttpPostByChunks): $e");
+    }
+
+    return completer.future;
+    
+
+  }
+
   bool doesFileExist(String filePath) {
     return File(filePath).existsSync();
   }
@@ -79,6 +149,26 @@ class AppData with ChangeNotifier {
       context,
       MaterialPageRoute(builder: (context) => MainPage()),
     );
+  }
+
+  Future<void> changePlan(int index) async {
+    changingPlan = true;
+    notifyListeners();
+    await Future.delayed(Duration(seconds: 1));
+    if (userList[index]["pla"] == "premium") {
+      userList[index]["pla"] = "free";
+    } else {
+      userList[index]["pla"] = "premium";
+    }
+
+    print(userList[index]["pla"]);
+
+    changingPlan = false;
+    notifyListeners();
+  }
+
+  void forceNotifyListeners() {
+    notifyListeners();
   }
 
 }
