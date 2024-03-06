@@ -196,6 +196,7 @@ class AppData with ChangeNotifier {
   };
 
   String jsonData = jsonEncode(data); 
+  print(jsonData);
   
   try {
     var response = await http.post(
