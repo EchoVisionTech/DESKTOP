@@ -65,6 +65,7 @@ Center _userlist(BuildContext context) {
               padding: const EdgeInsets.all(8),
               itemCount: appData.userList.length,
               itemBuilder: (context, index) {
+                print(appData.userList[index]);
                 return GestureDetector(
                   child: Container(
                     height: 35,

@@ -17,7 +17,8 @@ class AppData with ChangeNotifier {
   double textFieldWidth = 305;
   double textFieldHeight = 40;
 
-  List<dynamic> userList = [{"nickname":"joel", "pla":"premium"},{"nickname":"geanfranco", "pla":"premium"},{"nickname":"admin", "pla":"free"}];
+  // List<dynamic> userList = [{"nickname":"joel", "pla":"premium"},{"nickname":"geanfranco", "pla":"premium"},{"nickname":"admin", "pla":"free"}];
+  List<dynamic> userList = [];
   bool changingPlan = false;
 
 
@@ -31,30 +32,34 @@ class AppData with ChangeNotifier {
 
       String jsonString = jsonEncode(jsonData);
 
-      _loadHttpPostByChunks(url, jsonString, context);
+      await _loadHttpPostByChunks(url, jsonString, context);
 
       File(lastUrlPath).writeAsStringSync(url);
 
-      userList = await _getList(url);
+      // print(userList);
+      await _getList();
+      print("getList done");
+      print(userList);
+
+      notifyListeners();
 
     } else {
       showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text(
-          "Warning Error",
-          style: TextStyle(color: CupertinoColors.destructiveRed),
-        ),
-        content: const Text("You should complete all the fields."),
-        actions: [
-          CupertinoDialogAction(
-            child: Text("OK"),
-            onPressed: () => Navigator.of(context).pop(),
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text(
+            "Warning Error",
+            style: TextStyle(color: CupertinoColors.destructiveRed),
           ),
-        ],
-      ),
-    );
-
+          content: const Text("You should complete all the fields."),
+          actions: [
+            CupertinoDialogAction(
+              child: Text("OK"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -96,29 +101,31 @@ class AppData with ChangeNotifier {
     return completer.future;
   }
 
-  Future<List<dynamic>> _getList(String url) async {
-    var completer = Completer<List<dynamic>>();
+  Future<void> _getList() async {
+    var completer = Completer<void>();
 
     Map<String, dynamic> jsonResponse;
     Map<String, dynamic> jsonData;
-
+    
     List<dynamic> list = [];
+    String url = "https://ams22.ieti.site:443/api/users/admin_get_list";
     try {
       var response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json', 
-          "Authorization": 'Bearer $apiKey',
+          'Authorization': 'Bearer $apiKey'
         }
       );
 
       if (response.statusCode == 200) {
         // La solicitud ha sido exitosa
-        print('RESPONSE: ${response.body}');
+        /// print('RESPONSE: ${response.body}');
         jsonResponse = jsonDecode(response.body);
-  
         if (jsonResponse["status"] == "OK") {
           list = jsonResponse["data"];
+          list.removeLast();
+          userList = list;
         }
 
         completer.complete();
@@ -155,17 +162,73 @@ class AppData with ChangeNotifier {
     changingPlan = true;
     notifyListeners();
     await Future.delayed(Duration(seconds: 1));
+    String phoneNumber = userList[index]['telefon'];
+    String nickname = userList[index]['nickname'];
+    String email = userList[index]['email'];
+    String newPlan = "";
     if (userList[index]["pla"] == "premium") {
-      userList[index]["pla"] = "free";
+      newPlan = "free";
     } else {
-      userList[index]["pla"] = "premium";
+      newPlan = "premium";
     }
+
+    userList[index]["pla"] = newPlan;
+
+    await sendServerChangePlan(phoneNumber, nickname, email, newPlan);
 
     print(userList[index]["pla"]);
 
     changingPlan = false;
     notifyListeners();
   }
+
+  Future<void> sendServerChangePlan(String phoneNumber, String nickname, String email, String newPlan) async {
+  var completer = Completer<void>();
+
+  Map<String, dynamic> jsonResponse;
+  
+  String url = "https://ams22.ieti.site:443/api/users/admin_change_plan";
+  Map<String, dynamic> data = {
+    'phone_number': phoneNumber,
+    'nickname': nickname,
+    'email': email,
+    'plan': newPlan
+  };
+
+  String jsonData = jsonEncode(data); 
+  
+  try {
+    var response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json', 
+        'Authorization': 'Bearer $apiKey'
+      }, 
+      body: jsonData, // Send JSON string as the request body
+    );
+
+    if (response.statusCode == 200) {
+      // Request was successful
+      print('RESPONSE: ${response.body}');
+      jsonResponse = jsonDecode(response.body);
+      print(jsonResponse);
+      if (jsonResponse["status"] == "OK") {
+        print("Plan changed");
+      }
+
+      completer.complete();
+    } else {
+      // Request failed
+      completer.completeError(
+        "Server error: ${response.reasonPhrase}"
+      );
+    }
+  } catch (e) {
+    completer.completeError("Exception occurred: $e");
+  }
+  
+  return completer.future;
+}
 
   void forceNotifyListeners() {
     notifyListeners();
