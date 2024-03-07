@@ -124,8 +124,7 @@ class AppData with ChangeNotifier {
         jsonResponse = jsonDecode(response.body);
         if (jsonResponse["status"] == "OK") {
           list = jsonResponse["data"];
-          list.removeLast();
-          userList = list;
+          userList = list.where((element) => element != null).toList();
         }
 
         completer.complete();
